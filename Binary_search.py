@@ -22,13 +22,14 @@ def binary_search(arr, target):
 
     while low <= high:
         mid = (low+high)//2
-
         if arr[mid] == target:
             return mid
         elif arr[mid] < target:
             low = mid + 1
         else:
-            high = mid - 1 
+            high = mid - 1
+    if low >= len(arr):
+        return high
     if abs(target - arr[low]) < abs(target-arr[high]):
         return low
     else:

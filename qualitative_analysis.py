@@ -20,7 +20,7 @@ xraylib_sheet1 = xraylib_book['1']
 xraylib1_theta = []
 xraylib1_element = []
 for row in xraylib_sheet1.iter_rows():
-    theta = row[9].value
+    theta = row[8].value
     element = row[1].value
     if theta == None:
         continue
@@ -82,4 +82,94 @@ for row in xraylib_sheet6.iter_rows():
     xraylib6_theta.append(theta)
     xraylib6_element.append(element)
 #选择并打开检测源文件
-
+root = tk.Tk()
+root.withdraw()
+f_path = filedialog.askopenfilename(title='请选择检测文件',filetypes=[("Excel",".xls .xlsx")])
+dirStr, ext = os.path.splitext(f_path)
+filename = dirStr.split("/")[-1]
+print(filename)
+#打开检测结果
+test_workbook = load_workbook(f_path)
+#分析结果保存文件夹选择ui
+result_save_path = filedialog.askdirectory(title='请选择分析结果存储路径')
+os.chdir(result_save_path) #打开指定目录
+try:
+    os.makedirs(filename) #创建结果存储文件夹
+except:
+    None
+#创建分析结果存储表格
+result_workbook = openpyxl.Workbook()
+result_worksheet = result_workbook.active #打开默认工作表
+result_number = 1
+for i in range(1,6+1):
+    #创建检测结果数组
+    datax=[]
+    datay=[]
+    
+    #读取检测结果sheet
+    test_sheet = test_workbook.get_sheet_by_name(f'{i}')
+    for row in test_sheet.iter_rows():
+        row_data = row[0].value
+        datax.append(row_data)
+        row_data = row[1].value
+        datay.append(row_data)
+    datax = np.array(datax)
+    datay = np.array(datay)
+    datay_mean= np.mean(datay)
+    peaks, _ = find_peaks(datay,width=2,height=datay_mean)
+    plt.subplot(2,3,i)
+    plt.plot(datax[peaks],datay[peaks],"x")
+    plt.axhline(y=datay_mean,color="r",linestyle = "--")
+    plt.plot(datax,np.zeros_like(datax),"--",color="gray")
+    plt.plot(datax,datay)
+    for j in range(len(peaks)):
+        print(i)
+        print(datax[peaks][j])
+        if i==1:
+            result = binary_search(xraylib1_theta,datax[peaks][j])
+            if(result==None):
+                continue
+            if(abs(xraylib1_theta[result]-datax[peaks][j])>3):
+                continue
+            result_worksheet[f'A{result_number}'] = xraylib1_element[result]
+        elif i==2:
+            result = binary_search(xraylib2_theta,datax[peaks][j])
+            if(result==None):
+                continue
+            if(abs(xraylib2_theta[result]-datax[peaks][j])>3):
+                continue
+            result_worksheet[f'A{result_number}'] = xraylib2_element[result]
+        elif i==3:
+            result = binary_search(xraylib3_theta,datax[peaks][j])
+            if(result==None):
+                continue
+            if(abs(xraylib3_theta[result]-datax[peaks][j])>3):
+                continue
+            result_worksheet[f'A{result_number}'] = xraylib3_element[result]
+        elif i==4:
+            result = binary_search(xraylib4_theta,datax[peaks][j])
+            if(result==None):
+                continue
+            if(abs(xraylib4_theta[result]-datax[peaks][j])>3):
+                continue
+            result_worksheet[f'A{result_number}'] = xraylib4_element[result]
+        elif i==5:
+            result = binary_search(xraylib5_theta,datax[peaks][j])
+            if(result==None):
+                continue
+            if(abs(xraylib5_theta[result]-datax[peaks][j])>3):
+                continue
+            result_worksheet[f'A{result_number}'] = xraylib5_element[result]
+        elif i==6:
+            result = binary_search(xraylib6_theta,datax[peaks][j])
+            if(result==None):
+                continue
+            if(abs(xraylib6_theta[result]-datax[peaks][j])>3):
+                continue
+            result_worksheet[f'A{result_number}'] = xraylib6_element[result]
+        result_worksheet[f'B{result_number}'] = datax[peaks][j]
+        result_worksheet[f'C{result_number}'] = datay[peaks][j]
+        result_worksheet[f'D{result_number}'] = i
+        result_number = result_number + 1
+result_workbook.save(result_save_path+'/'+filename+'/'+filename+'_result'+'.xlsx')
+plt.show()
