@@ -11,6 +11,7 @@ from tkinter import filedialog
 import openpyxl
 import os
 from Binary_search import binary_search
+from my_filter import myfilter
 
 #打开特征X射线数据库（XRAYLIB）
 xraylib_book = load_workbook("选峰表.xlsx")
@@ -104,8 +105,7 @@ result_number = 1
 for i in range(1,6+1):
     #创建检测结果数组
     datax=[]
-    datay=[]
-    
+    datay=[] 
     #读取检测结果sheet
     test_sheet = test_workbook.get_sheet_by_name(f'{i}')
     for row in test_sheet.iter_rows():
@@ -113,18 +113,21 @@ for i in range(1,6+1):
         datax.append(row_data)
         row_data = row[1].value
         datay.append(row_data)
+    plt.subplot(2,3,i)
     datax = np.array(datax)
     datay = np.array(datay)
+    plt.plot(datax,datay)
+    datay = myfilter(datay)
+    datax = np.linspace(min(datax),max(datax),len(datay))
     datay_mean= np.mean(datay)
-    peaks, _ = find_peaks(datay,width=2,height=datay_mean)
-    plt.subplot(2,3,i)
+    peaks, _ = find_peaks(datay,width=2,distance=2,prominence=30)
     plt.plot(datax[peaks],datay[peaks],"x")
     plt.axhline(y=datay_mean,color="r",linestyle = "--")
     plt.plot(datax,np.zeros_like(datax),"--",color="gray")
     plt.plot(datax,datay)
     for j in range(len(peaks)):
-        print(i)
-        print(datax[peaks][j])
+        # print(i)
+        # print(datax[peaks][j])
         if i==1:
             result = binary_search(xraylib1_theta,datax[peaks][j])
             if(result==None):
@@ -171,5 +174,5 @@ for i in range(1,6+1):
         result_worksheet[f'C{result_number}'] = datay[peaks][j]
         result_worksheet[f'D{result_number}'] = i
         result_number = result_number + 1
-result_workbook.save(result_save_path+'/'+filename+'/'+filename+'_result'+'.xlsx')
+# result_workbook.save(result_save_path+'/'+filename+'/'+filename+'_result'+'.xlsx')
 plt.show()
